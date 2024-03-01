@@ -113,7 +113,7 @@ void loop() {
             // client.println("Connection: close");
             // client.println();
 
-            // Handle the requests
+            // Handle the password requests and confirm password
             if (header.indexOf("GET /auth?pwd=1234") >= 0) {
               userPassword = "1234";
               passwordState = "Correct";
@@ -201,9 +201,7 @@ void loop() {
 
             // Display camera
             client.println("<div class=\"container\">");
-
             client.println("<p>Camera</p>");
-
             client.println("</div>");
 
             // Password input field
@@ -299,9 +297,6 @@ void loop() {
     Serial.println("Client disconnected.");
     Serial.println("");
   }
-
-
-
 
   // End of html page
   client.println("</body></html>");
