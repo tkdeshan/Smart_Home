@@ -2,8 +2,9 @@
   Kavinda Deshan
   Complete project details at http://randomnerdtutorials.com  
 *********/
-
+#include <Arduino.h>
 #include <WiFi.h>
+#include <ESP32Servo.h>
 
 // Network credentials
 const char* ssid = "Dialog 4G 700";
@@ -16,17 +17,24 @@ WiFiServer server(80);
 String header;
 
 // Auxiliar variables to store the current output state
-String bulbInsideState = "off"; 
+String bulbInsideState = "off";
 String bulbOutsideState = "off";
+String switchState = "off";
+String gateState = "close";
 
 // Assign output variables to GPIO pins
 const int bulbInside = 12;
-const int bulbOutside = 13;
+const int bulbOutside = 27;
+const int switchMotor = 14;
+const int gate = 13;
+
+// Servo motor init
+Servo gateServo;
 
 // Current time
 unsigned long currentTime = millis();
 // Previous time
-unsigned long previousTime = 0; 
+unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
@@ -35,9 +43,13 @@ void setup() {
   // Initialize the output variables as outputs
   pinMode(bulbInside, OUTPUT);
   pinMode(bulbOutside, OUTPUT);
+  pinMode(switchMotor, OUTPUT);
+  gateServo.attach(gate);
   // Set outputs to LOW
   digitalWrite(bulbInside, LOW);
   digitalWrite(bulbOutside, LOW);
+  digitalWrite(switchMotor, LOW);
+  gateServo.write(0);
 
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
@@ -55,21 +67,21 @@ void setup() {
   server.begin();
 }
 
-void loop(){
-  WiFiClient client = server.available();   // Listen for incoming clients
+void loop() {
+  WiFiClient client = server.available();  // Listen for incoming clients
 
-  if (client) {                             // If a new client connects,
+  if (client) {  // If a new client connects,
     currentTime = millis();
     previousTime = currentTime;
-    Serial.println("New Client.");          // print a message out in the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
+    Serial.println("New Client.");                                             // print a message out in the serial port
+    String currentLine = "";                                                   // make a String to hold incoming data from the client
     while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
       currentTime = millis();
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
+      if (client.available()) {  // if there's bytes to read from the client,
+        char c = client.read();  // read a byte, then
+        Serial.write(c);         // print it out the serial monitor
         header += c;
-        if (c == '\n') {                    // if the byte is a newline character
+        if (c == '\n') {  // if the byte is a newline character
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
@@ -79,7 +91,7 @@ void loop(){
             client.println("Content-type:text/html");
             client.println("Connection: close");
             client.println();
-            
+
             // turns the GPIOs on and off
             if (header.indexOf("GET /12/on") >= 0) {
               bulbInsideState = "on";
@@ -88,54 +100,89 @@ void loop(){
               Serial.println("Bulb Inside off");
               bulbInsideState = "off";
               digitalWrite(bulbInside, LOW);
-            } else if (header.indexOf("GET /13/on") >= 0) {
+            } else if (header.indexOf("GET /27/on") >= 0) {
               Serial.println("Bulb Outside on");
               bulbOutsideState = "on";
               digitalWrite(bulbOutside, HIGH);
-            } else if (header.indexOf("GET /13/off") >= 0) {
+            } else if (header.indexOf("GET /27/off") >= 0) {
               Serial.println("Bulb Outside off");
               bulbOutsideState = "off";
               digitalWrite(bulbOutside, LOW);
+            } else if (header.indexOf("GET /14/on") >= 0) {
+              Serial.println("Switch on");
+              switchState = "on";
+              digitalWrite(switchMotor, HIGH);
+            } else if (header.indexOf("GET /14/off") >= 0) {
+              Serial.println("Switch off");
+              switchState = "off";
+              digitalWrite(switchMotor, LOW);
+            }else if (header.indexOf("GET /13/open") >= 0) {
+              Serial.println("Gate Open");
+              gateState = "open";
+              gateServo.write(100);
+            } else if (header.indexOf("GET /13/close") >= 0) {
+              Serial.println("Gate close");
+              gateState = "close";
+              gateServo.write(0);
             }
-            
+
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons 
+            // CSS to style the on/off buttons
             // Feel free to change the background-color and font-size attributes to fit your preferences
             client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
             client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
             client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
             client.println(".button2 {background-color: #555555;}</style></head>");
-            
+
             // Web Page Heading
             client.println("<body><h1>Smart Home Dashboard</h1>");
-            
-            // Display current state, and ON/OFF buttons for Bulb Inside 
+
+            // Display current state, and ON/OFF buttons for Bulb Inside
             client.println("<p>Bulb Inside - State " + bulbInsideState + "</p>");
-            // If the bulbInsideState is off, it displays the ON button       
-            if (bulbInsideState=="off") {
+            // If the bulbInsideState is off, it displays the ON button
+            if (bulbInsideState == "off") {
               client.println("<p><a href=\"/12/on\"><button class=\"button\">ON</button></a></p>");
             } else {
               client.println("<p><a href=\"/12/off\"><button class=\"button button2\">OFF</button></a></p>");
-            } 
-               
-            // Display current state, and ON/OFF buttons for Bulb Outside 
-            client.println("<p>Bulb Outside - State " + bulbOutsideState + "</p>");
-            // If the bulbOutsideState is off, it displays the ON button       
-            if (bulbOutsideState=="off") {
-              client.println("<p><a href=\"/13/on\"><button class=\"button\">ON</button></a></p>");
-            } else {
-              client.println("<p><a href=\"/13/off\"><button class=\"button button2\">OFF</button></a></p>");
             }
+
+            // Display current state, and ON/OFF buttons for Bulb Outside
+            client.println("<p>Bulb Outside - State " + bulbOutsideState + "</p>");
+            // If the bulbOutsideState is off, it displays the ON button
+            if (bulbOutsideState == "off") {
+              client.println("<p><a href=\"/27/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/27/off\"><button class=\"button button2\">OFF</button></a></p>");
+            }
+
+            // Display current state, and ON/OFF buttons for switch
+            client.println("<p>Switch - State " + switchState + "</p>");
+            // If the switchState is off, it displays the ON button
+            if (switchState == "off") {
+              client.println("<p><a href=\"/14/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/14/off\"><button class=\"button button2\">OFF</button></a></p>");
+            }
+
+            // Display current state, and OPEN/OCLOSE buttons for gate
+            client.println("<p>Gate - State " + gateState + "</p>");
+            // If the switchState is off, it displays the ON button
+            if (gateState == "close") {
+              client.println("<p><a href=\"/13/open\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/13/close\"><button class=\"button button2\">OFF</button></a></p>");
+            }
+
             client.println("</body></html>");
-            
+
             // The HTTP response ends with another blank line
             client.println();
             // Break out of the while loop
             break;
-          } else { // if you got a newline, then clear currentLine
+          } else {  // if you got a newline, then clear currentLine
             currentLine = "";
           }
         } else if (c != '\r') {  // if you got anything else but a carriage return character,
