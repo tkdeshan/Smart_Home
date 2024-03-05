@@ -27,6 +27,7 @@ String bulbOutsideState = "OFF";
 String switchState = "OFF";
 String gateState = "CLOSE";
 String ldrState = "NOT DETECTED";
+String fireState = "NOT DETECTED";
 
 // Assign output variables to GPIO pins
 const int bulbInside = 12;
@@ -35,6 +36,7 @@ const int switchMotor = 14;
 const int gate = 13;
 const int buzzer = 26;
 const int ldr = A0;
+const int fire = 25;
 
 // Servo motor init
 Servo gateServo;
@@ -55,6 +57,7 @@ void setup() {
   pinMode(switchMotor, OUTPUT);
   pinMode(ldr, INPUT);
   pinMode(buzzer, OUTPUT);
+  pinMode(fire, INPUT);
   gateServo.attach(gate);
 
   // Set outputs to LOW
@@ -82,13 +85,26 @@ void setup() {
 
 void loop() {
   int rawDataLdr = analogRead(ldr);
+  int fireValue = digitalRead(fire);
 
   // Check left LDR status
   if (rawDataLdr < 3000) {
     ldrState = "OBJECT DETECTED";
-    digitalWrite(buzzer, HIGH);
   } else {
     ldrState = "NOT DETECTED";
+  }
+
+
+  // There is fire
+  if (fireValue == LOW) {
+    fireState = "FIRE DETECTED";
+  } else {
+    fireState = "NOT DETECTED";
+  }
+
+  if (rawDataLdr < 3000 || fireValue == LOW) {
+    digitalWrite(buzzer, HIGH);
+  } else {
     digitalWrite(buzzer, LOW);
   }
 
@@ -191,7 +207,7 @@ void loop() {
             // JavaScript function for automatic page reload
             client.println("<script>");
             client.println("function reloadPage() {");
-            client.println("  setTimeout(function(){location.reload();}, 20000);");  // Reload page every 2 minute
+            client.println("  setTimeout(function(){location.reload();}, 10000);");  // Reload page every 2 minute
             client.println("}");
             client.println("reloadPage();");  // Call the function when the page loads
             client.println("</script>");
@@ -199,7 +215,7 @@ void loop() {
             // Display Securty Status
             client.println("<div class=\"state_container\">");
             client.println("<p>Security Status - " + ldrState + "</p>");
-            client.println("<p>Fire Status - NOT DETECTED</p>");
+            client.println("<p>Fire Status -" + fireState + "</p>");
             client.println("</div>");
 
             // Display camera
