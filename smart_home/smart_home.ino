@@ -90,22 +90,13 @@ void loop() {
   // Check left LDR status
   if (rawDataLdr < 3000) {
     ldrState = "OBJECT DETECTED";
-  } else {
-    ldrState = "NOT DETECTED";
+    digitalWrite(buzzer, HIGH);
   }
-
 
   // There is fire
   if (fireValue == LOW) {
     fireState = "FIRE DETECTED";
-  } else {
-    fireState = "NOT DETECTED";
-  }
-
-  if (rawDataLdr < 3000 || fireValue == LOW) {
     digitalWrite(buzzer, HIGH);
-  } else {
-    digitalWrite(buzzer, LOW);
   }
 
   WiFiClient client = server.available();  // Listen for incoming clients
@@ -140,7 +131,12 @@ void loop() {
             }
 
             // Handle the outputs according to the requests
-            if (header.indexOf("GET /12/on") >= 0) {
+            if (header.indexOf("GET /26/off") >= 0) {
+              ldrState = "NOT DETECTED";
+              fireState = "NOT DETECTED";
+              Serial.println("Buzzer off");
+              digitalWrite(buzzer, LOW);
+            } else if (header.indexOf("GET /12/on") >= 0) {
               Serial.println("Bulb Inside on");
               bulbInsideState = "ON";
               digitalWrite(bulbInside, HIGH);
@@ -215,7 +211,8 @@ void loop() {
             // Display Securty Status
             client.println("<div class=\"state_container\">");
             client.println("<p>Security Status - " + ldrState + "</p>");
-            client.println("<p>Fire Status -" + fireState + "</p>");
+            client.println("<p>Fire Status - " + fireState + "</p>");
+            client.println("<p><a href=\"/26/off\"><button class=\"btn_submit\">Buzzer OFF</button></a></p>");
             client.println("</div>");
 
             // Display camera
