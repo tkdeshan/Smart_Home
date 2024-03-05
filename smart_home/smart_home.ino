@@ -203,7 +203,7 @@ void loop() {
             // JavaScript function for automatic page reload
             client.println("<script>");
             client.println("function reloadPage() {");
-            client.println("  setTimeout(function(){location.reload();}, 10000);");  // Reload page every 2 minute
+            client.println("  setTimeout(function(){window.location.href = '/';}, 10000);");  // Reload page every 1 minute
             client.println("}");
             client.println("reloadPage();");  // Call the function when the page loads
             client.println("</script>");
