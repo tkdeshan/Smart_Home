@@ -26,6 +26,7 @@ String bulbInsideState = "OFF";
 String bulbOutsideState = "OFF";
 String switchState = "OFF";
 String gateState = "CLOSE";
+String doorState = "CLOSE";
 String ldrState = "NOT DETECTED";
 String fireState = "NOT DETECTED";
 
@@ -34,12 +35,14 @@ const int bulbInside = 12;
 const int bulbOutside = 27;
 const int switchMotor = 14;
 const int gate = 13;
+const int door = 33;
 const int buzzer = 26;
 const int ldr = A0;
 const int fire = 25;
 
 // Servo motor init
 Servo gateServo;
+Servo doorServo;
 
 // Current time
 unsigned long currentTime = millis();
@@ -59,6 +62,7 @@ void setup() {
   pinMode(buzzer, OUTPUT);
   pinMode(fire, INPUT);
   gateServo.attach(gate);
+  doorServo.attach(door);
 
   // Set outputs to LOW
   digitalWrite(bulbInside, LOW);
@@ -66,6 +70,7 @@ void setup() {
   digitalWrite(switchMotor, LOW);
   digitalWrite(buzzer, LOW);
   gateServo.write(0);
+  doorServo.write(0);
 
   // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
@@ -164,12 +169,22 @@ void loop() {
               Serial.println("Gate Open");
               if (userPassword == "1234") {
                 gateState = "OPEN";
-                gateServo.write(100);
+                gateServo.write(90);
               }
             } else if (header.indexOf("GET /13/close") >= 0) {
-              Serial.println("Gate close");
+              Serial.println("Door close");
               gateState = "CLOSE";
               gateServo.write(0);
+            } else if (header.indexOf("GET /33/open") >= 0) {
+              Serial.println("Door Open");
+              if (userPassword == "1234") {
+                doorState = "OPEN";
+                doorServo.write(90);
+              }
+            } else if (header.indexOf("GET /33/close") >= 0) {
+              Serial.println("Door close");
+              doorState = "CLOSE";
+              doorServo.write(0);
             }
 
             // Display the HTML web page
@@ -252,6 +267,20 @@ void loop() {
             client.println("</div>");
             client.println("</div>");
 
+            // Display current state, and OPEN/OCLOSE buttons for door
+            client.println("<div class=\"container\">");
+            client.println("<div class=\"control_row\">");
+            client.println("<p>Door State " + doorState + "</p>");
+
+            if (doorState == "CLOSE") {
+              client.println("<p><a href=\"/33/open\"><button class=\"button\">OPEN</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/33/close\"><button class=\"button button2\">CLOSE</button></a></p>");
+            }
+
+            client.println("</div>");
+            client.println("</div>");
+
             // Display current state, and ON/OFF buttons for Bulb Inside
             client.println("<div class=\"container container_color\">");
             client.println("<div class=\"control_row\">");
@@ -267,7 +296,7 @@ void loop() {
             client.println("</div>");
 
             // Display current state, and ON/OFF buttons for Bulb Outside
-            client.println("<div class=\"container\">");
+            client.println("<div class=\"container  container_color\">");
             client.println("<div class=\"control_row\">");
             client.println("<p>Bulb Outside " + bulbOutsideState + "</p>");
 
@@ -281,7 +310,7 @@ void loop() {
             client.println("</div>");
 
             // Display current state, and ON/OFF buttons for switch
-            client.println("<div class=\"container container_color\">");
+            client.println("<div class=\"container\">");
             client.println("<div class=\"control_row\">");
             client.println("<p>Switch State " + switchState + "</p>");
 
