@@ -5,12 +5,19 @@ Samrt home with ESP32
 ## Table of Contents
 
 - [Introduction](#introduction)
+- [Demo](#demo)
 - [Getting Started](#getting-started)
-- [Usage](#usage)
+- [Usage](#usage)      
 
 ## Introduction
 
 This is the prototype of a smart home system that can securely control lights, switches, gates, and doors using a mobile phone. It utilizes sensors to detect objects and flames, displaying the overall security status on the mobile phone.
+
+## Demo
+
+# Project Title
+
+[![Watch the video](https://www.youtube.com/watch?v=mFKJOkdENto)](https://www.youtube.com/watch?v=mFKJOkdENto)
 
 ## Getting Started
 
@@ -25,3 +32,5 @@ This is the prototype of a smart home system that can securely control lights, s
 - Control lights and switches using particular buttons.
 - Control the gate and door using specific buttons (before that, provide the correct password).
 - Ability to see the security and fire state and overall states in the control elements.
+
+  
