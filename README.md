@@ -15,9 +15,7 @@ This is the prototype of a smart home system that can securely control lights, s
 
 ## Demo
 
-# Project Title
-
-[![Watch the video](https://img.youtube.com/vi/mFKJOkdENto/0.jpg)](https://www.youtube.com/watch?v=mFKJOkdENto)
+[Watch the video](https://www.youtube.com/watch?v=mFKJOkdENto)
 
 ## Getting Started
 
